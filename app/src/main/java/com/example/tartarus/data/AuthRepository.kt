@@ -59,7 +59,6 @@ class AuthRepository {
     suspend fun getGameHistory(): List<GameHistory> {
         val userId = currentUserId() ?: return emptyList()
 
-        // Получаем все записи игр текущего пользователя
         val records = SupabaseModule.client.postgrest["Game"]
             .select {
                 filter { eq("User_id", userId) }
@@ -67,12 +66,11 @@ class AuthRepository {
             }
             .decodeList<GameRecord>()
 
-        // Группируем по сессии и суммируем очки
         return records.groupBy { it.sessionId }.map { (sessionId, sessionRecords) ->
             GameHistory(
                 sessionId = sessionId,
                 score = sessionRecords.sumOf { it.score },
-                date = "Игра #$sessionId" // Или берем дату, если добавите поле Created_at в таблицу Game
+                date = "Игра #$sessionId"
             )
         }
     }

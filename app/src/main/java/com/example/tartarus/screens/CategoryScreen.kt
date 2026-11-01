@@ -1,11 +1,11 @@
 package com.example.tartarus.screens
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -17,33 +17,24 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tartarus.R
 import com.example.tartarus.SideBar
+import com.example.tartarus.ViewModel.CategoryState
+import com.example.tartarus.ViewModel.CategoryViewModel
 import com.example.tartarus.data.Category
-import com.example.tartarus.data.CategoryRep
-import kotlinx.coroutines.CancellationException
 
 @Composable
 fun CategoryScreen(
     onCategoryClick: (Category) -> Unit = {},
-    onGoToRegister: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onBookmarkClick: () -> Unit = {},
-    onGameClick: () -> Unit = {}
+    onGameClick: () -> Unit = {},
+    viewModel: CategoryViewModel = viewModel()
 ) {
-    val repo = remember { CategoryRep() }
-    var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
-
-    LaunchedEffect(Unit) {
-        try {
-            categories = repo.getCategories()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("CategoryScreen", "Ошибка загрузки", e)
-        }
-    }
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -54,7 +45,6 @@ fun CategoryScreen(
         )
 
         Row(modifier = Modifier.fillMaxSize()) {
-
             SideBar(
                 onHomeClick = onHomeClick,
                 onBookmarkClick = onBookmarkClick,
@@ -76,16 +66,28 @@ fun CategoryScreen(
                         color = Color(0xFF2A1A0F)
                     )
 
-                    Spacer(Modifier.height(8.dp))
                     Spacer(Modifier.height(24.dp))
 
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(18.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(categories) { category ->
-                            CategoryItem(category) { onCategoryClick(category) }
+                    when (val currentState = state) {
+                        is CategoryState.Loading -> {
+                            CircularProgressIndicator(color = Color(0xFF8B0000))
+                        }
+                        is CategoryState.Error -> {
+                            Text(
+                                text = "Ошибка: ${currentState.message}",
+                                color = Color.Red
+                            )
+                        }
+                        is CategoryState.Success -> {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(18.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(currentState.categories) { category ->
+                                    CategoryItem(category) { onCategoryClick(category) }
+                                }
+                            }
                         }
                     }
                 }

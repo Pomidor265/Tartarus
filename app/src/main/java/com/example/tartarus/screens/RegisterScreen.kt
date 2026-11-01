@@ -1,6 +1,5 @@
 package com.example.tartarus.screens
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -20,24 +19,22 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tartarus.R
-import com.example.tartarus.data.AuthRepository
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
+import com.example.tartarus.ViewModel.AuthViewModel
 
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
-    onGoToLogin: () -> Unit
+    onGoToLogin: () -> Unit,
+    viewModel: AuthViewModel
 ) {
-    val repo = remember { AuthRepository() }
-    val scope = rememberCoroutineScope()
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -118,22 +115,7 @@ fun RegisterScreen(
 
             Button(
                 onClick = {
-                    scope.launch {
-                        isLoading = true
-                        error = null
-                        try {
-                            repo.signUp(email.trim(), password, username.trim())
-                            Log.d("RegisterScreen", "Регистрация успешна")
-                            onRegisterSuccess()
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            Log.e("RegisterScreen", "Ошибка регистрации", e)
-                            error = e.message ?: "Не удалось зарегистрироваться"
-                        } finally {
-                            isLoading = false
-                        }
-                    }
+                    viewModel.register(email.trim(), password, username.trim(), onRegisterSuccess)
                 },
                 enabled = !isLoading &&
                         email.isNotBlank() &&

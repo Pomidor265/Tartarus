@@ -1,13 +1,11 @@
 package com.example.tartarus.screens
 
-import com.example.tartarus.data.MarkRep
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,35 +17,29 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tartarus.R
 import com.example.tartarus.SideBar
-
+import com.example.tartarus.ViewModel.BookmarkDetailViewModel
 import com.example.tartarus.data.Creature
-import kotlinx.coroutines.CancellationException
 
 @Composable
 fun BookmarkDetailScreen(
     bookmarkId: Long,
     bookmarkName: String,
     onCreatureClick: (Creature) -> Unit = {},
-    onBackClick: () -> Unit = {},
+    onExtraClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onGameClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onBookmarkClick: () -> Unit = {},
+    viewModel: BookmarkDetailViewModel = viewModel()
 ) {
-    val repo = remember { MarkRep() }
-    var creatures by remember { mutableStateOf<List<Creature>>(emptyList()) }
-    var error by remember { mutableStateOf<String?>(null) }
+    val creatures by viewModel.creatures.collectAsStateWithLifecycle()
 
     LaunchedEffect(bookmarkId) {
-        try {
-            creatures = repo.getCreaturesInBookmark(bookmarkId)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("BookmarkDetail", "Ошибка", e)
-            error = e.message
-        }
+        viewModel.loadCreatures(bookmarkId)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -64,16 +56,6 @@ fun BookmarkDetailScreen(
                 .padding(start = 80.dp, end = 16.dp, top = 32.dp, bottom = 180.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "← Назад",
-                fontSize = 16.sp,
-                fontFamily = FontFamily.Serif,
-                color = Color(0xFF8B0000),
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .clickable { onBackClick() }
-            )
-
             Spacer(Modifier.height(16.dp))
 
             Text(
@@ -87,14 +69,14 @@ fun BookmarkDetailScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            when {
-                error != null -> Text("Ошибка: $error", color = Color(0xFF8B0000))
-                creatures.isEmpty() -> Text(
+            if (creatures.isEmpty()) {
+                Text(
                     "Пусто",
                     color = Color(0xFF2A1A0F),
                     fontFamily = FontFamily.Serif
                 )
-                else -> LazyColumn(
+            } else {
+                LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
@@ -111,7 +93,7 @@ fun BookmarkDetailScreen(
                                 .clickable { onCreatureClick(creature) }
                                 .padding(vertical = 8.dp)
                         )
-                        Divider(
+                        HorizontalDivider(
                             color = Color(0xFF2A1A0F),
                             thickness = 1.dp,
                             modifier = Modifier.fillMaxWidth(0.7f)
@@ -124,10 +106,23 @@ fun BookmarkDetailScreen(
         Box(modifier = Modifier.align(Alignment.TopStart)) {
             SideBar(
                 onHomeClick = onHomeClick,
-                onBookmarkClick = onBackClick,
+                onBookmarkClick = onBookmarkClick,
                 onGameClick = onGameClick,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                showExtra = true,
+                extraIcon = R.drawable.back,
+                extraLabel = "Назад",
+                onExtraClick = onExtraClick
             )
         }
+
+        Image(
+            painter = painterResource(R.drawable.sealing),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .size(250.dp)
+        )
     }
 }

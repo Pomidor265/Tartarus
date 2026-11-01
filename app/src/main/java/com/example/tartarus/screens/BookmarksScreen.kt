@@ -1,58 +1,44 @@
 package com.example.tartarus.screens
 
-import android.util.Log
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tartarus.R
 import com.example.tartarus.SideBar
+import com.example.tartarus.ViewModel.BookmarksViewModel
 import com.example.tartarus.data.Mark
-import com.example.tartarus.data.MarkRep
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
 
 @Composable
 fun BookmarksScreen(
     onBookmarkClick: (Mark) -> Unit = {},
     onHomeClick: () -> Unit = {},
     onGameClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    viewModel: BookmarksViewModel = viewModel()
 ) {
-    val repo = remember { MarkRep() }
-    val scope = rememberCoroutineScope()
+    val bookmarks by viewModel.bookmarks.collectAsStateWithLifecycle()
 
-    var bookmarks by remember { mutableStateOf<List<Mark>>(emptyList()) }
     var showCreateDialog by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
-
     var bookmarkToDelete by remember { mutableStateOf<Mark?>(null) }
-
-    suspend fun reload() {
-        try {
-            bookmarks = repo.getMyMarks()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("BookmarksScreen", "Ошибка загрузки", e)
-        }
-    }
-
-    LaunchedEffect(Unit) { reload() }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -79,9 +65,12 @@ fun BookmarksScreen(
 
             Button(
                 onClick = { showCreateDialog = true },
-                modifier = Modifier.height(40.dp)
+                modifier = Modifier.height(40.dp),
+                shape = RectangleShape,
+                border = BorderStroke(width = 1.dp, color = Color.Black),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
             ) {
-                Text("+ Создать закладку", fontFamily = FontFamily.Serif)
+                Text("Создать закладку", fontFamily = FontFamily.Serif)
             }
 
             Spacer(Modifier.height(24.dp))
@@ -108,7 +97,6 @@ fun BookmarksScreen(
                                 .padding(vertical = 8.dp)
                         )
 
-
                         IconButton(
                             onClick = { bookmarkToDelete = bookmark },
                             modifier = Modifier.size(32.dp)
@@ -121,7 +109,7 @@ fun BookmarksScreen(
                         }
                     }
 
-                    Divider(
+                    HorizontalDivider(
                         color = Color(0xFF2A1A0F),
                         thickness = 1.dp,
                         modifier = Modifier.fillMaxWidth(0.9f)
@@ -133,11 +121,20 @@ fun BookmarksScreen(
         Box(modifier = Modifier.align(Alignment.TopStart)) {
             SideBar(
                 onHomeClick = onHomeClick,
-                onBookmarkClick = { /* уже тут */ },
+                onBookmarkClick = {},
                 onGameClick = onGameClick,
                 onProfileClick = onProfileClick
             )
         }
+
+        Image(
+            painter = painterResource(R.drawable.sealing),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .size(250.dp)
+        )
     }
 
     if (showCreateDialog) {
@@ -154,16 +151,9 @@ fun BookmarksScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    scope.launch {
-                        try {
-                            repo.createMark(newName.trim())
-                            newName = ""
-                            showCreateDialog = false
-                            reload()
-                        } catch (e: Exception) {
-                            Log.e("BookmarksScreen", "Ошибка создания", e)
-                        }
-                    }
+                    viewModel.createBookmark(newName.trim())
+                    newName = ""
+                    showCreateDialog = false
                 }) {
                     Text("Создать")
                 }
@@ -183,15 +173,8 @@ fun BookmarksScreen(
             text = { Text("Вы уверены, что хотите удалить '${bookmarkToDelete?.name}'? Все существа внутри также удалятся.") },
             confirmButton = {
                 TextButton(onClick = {
-                    scope.launch {
-                        try {
-                            bookmarkToDelete?.id?.let { repo.deleteBookmark(it) }
-                            bookmarkToDelete = null
-                            reload() // Обновляем список
-                        } catch (e: Exception) {
-                            Log.e("BookmarksScreen", "Ошибка удаления", e)
-                        }
-                    }
+                    bookmarkToDelete?.id?.let { viewModel.deleteBookmark(it) }
+                    bookmarkToDelete = null
                 }) {
                     Text("Удалить", color = Color.Red)
                 }

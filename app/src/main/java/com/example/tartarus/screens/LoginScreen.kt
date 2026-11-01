@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tartarus.R
 import com.example.tartarus.ViewModel.AuthViewModel
@@ -35,13 +36,11 @@ fun LoginScreen(
     onGoToRegister: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
-    val repo = remember { AuthRepository() }
-    val scope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -112,22 +111,7 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    scope.launch {
-                        isLoading = true
-                        error = null
-                        try {
-                            repo.signIn(email.trim(), password)
-                            Log.d("LoginScreen", "Вход успешен")
-                            onLoginSuccess()
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            Log.e("LoginScreen", "Ошибка входа", e)
-                            error = e.message ?: "Не удалось войти"
-                        } finally {
-                            isLoading = false
-                        }
-                    }
+                    viewModel.login(email, password, onLoginSuccess)
                 },
                 enabled = !isLoading && email.isNotBlank() && password.length >= 6,
                 modifier = Modifier

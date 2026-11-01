@@ -1,16 +1,17 @@
 package com.example.tartarus.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.tartarus.CreatureDetailScreen
 import com.example.tartarus.data.Difficulty
 import com.example.tartarus.screens.BookmarkDetailScreen
 import com.example.tartarus.screens.BookmarksScreen
 import com.example.tartarus.screens.CategoryScreen
+import com.example.tartarus.screens.CreatureDetailScreen
 import com.example.tartarus.screens.CreaturesScreen
 import com.example.tartarus.screens.DifficultyScreen
 import com.example.tartarus.screens.LoginScreen
@@ -35,7 +36,8 @@ fun AppNavGraph(
                 },
                 onGoToRegister = {
                     navController.navigate(Routes.REGISTER)
-                }
+                },
+                viewModel = viewModel()
             )
         }
 
@@ -48,7 +50,8 @@ fun AppNavGraph(
                 },
                 onGoToLogin = {
                     navController.popBackStack()
-                }
+                },
+                viewModel = viewModel()
             )
         }
 
@@ -57,14 +60,13 @@ fun AppNavGraph(
                 onCategoryClick = { category ->
                     navController.navigate(Routes.creatures(category.id))
                 },
-                onGoToRegister = {
-                    navController.navigate(Routes.REGISTER)
-                },
+
                 onProfileClick = {
                     navController.navigate(Routes.PROFILE)
                 },
                 onBookmarkClick = {navController.navigate((Routes.BOOKMARKS))},
-                onGameClick = { navController.navigate(Routes.DIFFICULTY) }
+                onGameClick = { navController.navigate(Routes.DIFFICULTY) },
+                viewModel = viewModel()
             )
         }
 
@@ -76,7 +78,10 @@ fun AppNavGraph(
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onBookmarkClick = {navController.navigate((Routes.BOOKMARKS))}
+                onBookmarkClick = {navController.navigate((Routes.BOOKMARKS))},
+                onGameClick = {navController.navigate(Routes.DIFFICULTY)},
+                viewModel = viewModel()
+
             )
         }
 
@@ -93,7 +98,8 @@ fun AppNavGraph(
                 onExtraClick = { navController.popBackStack() },
                 onHomeClick = {navController.navigate(Routes.CATEGORIES)},
                 onProfileClick = {navController.navigate(Routes.PROFILE)},
-                onBookmarkClick = {navController.navigate((Routes.BOOKMARKS))}
+                onBookmarkClick = {navController.navigate((Routes.BOOKMARKS))},
+                onGameClick = {navController.navigate(Routes.DIFFICULTY)}
             )
         }
 
@@ -107,7 +113,8 @@ fun AppNavGraph(
                 onExtraClick = { navController.popBackStack() },
                 onHomeClick = {navController.navigate(Routes.CATEGORIES)},
                 onProfileClick = {navController.navigate(Routes.PROFILE)},
-                onBookmarkClick = {navController.navigate((Routes.BOOKMARKS))}
+                onBookmarkClick = {navController.navigate((Routes.BOOKMARKS))},
+                onGameClick = {navController.navigate(Routes.DIFFICULTY)}
             )
         }
         composable(Routes.BOOKMARKS) {
@@ -116,7 +123,8 @@ fun AppNavGraph(
                     navController.navigate(Routes.bookmarkDetail(bm.id, bm.name))
                 },
                 onHomeClick = { navController.navigate(Routes.CATEGORIES) { popUpTo(0) } },
-                onProfileClick = { navController.navigate(Routes.PROFILE) }
+                onProfileClick = { navController.navigate(Routes.PROFILE) },
+                onGameClick = {navController.navigate(Routes.DIFFICULTY)}
             )
         }
 
@@ -133,9 +141,11 @@ fun AppNavGraph(
                 bookmarkId = id,
                 bookmarkName = name,
                 onCreatureClick = { c -> navController.navigate(Routes.creature(c.id)) },
-                onBackClick = { navController.popBackStack() },
+                onExtraClick = { navController.popBackStack() },
                 onHomeClick = { navController.navigate(Routes.CATEGORIES) { popUpTo(0) } },
-                onProfileClick = { navController.navigate(Routes.PROFILE) }
+                onProfileClick = { navController.navigate(Routes.PROFILE) },
+                onGameClick = {navController.navigate(Routes.DIFFICULTY)},
+                onBookmarkClick = {navController.navigate(Routes.BOOKMARKS)}
             )
         }
 
@@ -164,7 +174,6 @@ fun AppNavGraph(
             QuizScreen(
                 difficulty = Difficulty(id = diffId, name = diffName, questionsCount = qCount),
                 onQuizFinished = {
-                    // Возвращаемся на главную или показываем результаты
                     navController.popBackStack()
                 },
                 onHomeClick = { navController.navigate(Routes.CATEGORIES) { popUpTo(0) } },

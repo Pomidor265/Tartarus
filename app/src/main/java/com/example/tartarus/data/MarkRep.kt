@@ -39,19 +39,6 @@ class MarkRep {
         return SupabaseModule.client.postgrest["Creatures"].select { filter { isIn("Creature_id", ids) } }.decodeList<Creature>()
     }
 
-    suspend fun isCreatureInAnyBookmark(creatureId: Long): Boolean{
-        val my = getMyMarks()
-        if (my.isEmpty()) return false
-        val ids = my.mapNotNull { it.id }
-        val count = link_table.select {
-            filter {
-                isIn("Mark_id", ids)
-                eq("Creature_id", creatureId)
-            }
-        }.decodeList<MarkCreature>().size
-        return count > 0
-    }
-
     suspend fun deleteBookmark(bookmarkId: Long) {
         SupabaseModule.client.postgrest["Bookmark_Creatures"]
             .delete {

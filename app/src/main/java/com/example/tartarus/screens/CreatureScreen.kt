@@ -1,13 +1,11 @@
 package com.example.tartarus.screens
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,14 +17,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tartarus.R
 import com.example.tartarus.SideBar
-import com.example.tartarus.data.Category
+import com.example.tartarus.ViewModel.CreaturesViewModel
 import com.example.tartarus.data.Creature
-import com.example.tartarus.data.CreatureRep
-import com.example.tartarus.data.SupabaseModule
-import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.CancellationException
 
 @Composable
 fun CreaturesScreen(
@@ -36,35 +32,14 @@ fun CreaturesScreen(
     onProfileClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onBookmarkClick: () -> Unit = {},
-    onGameClick: () -> Unit = {}
+    onGameClick: () -> Unit = {},
+    viewModel: CreaturesViewModel = viewModel()
 ) {
-    val repo = remember { CreatureRep() }
-
-    var categoryName by remember { mutableStateOf("") }
-    var creatures by remember { mutableStateOf<List<Creature>>(emptyList()) }
-    var error by remember { mutableStateOf<String?>(null) }
+    val categoryName by viewModel.categoryName.collectAsStateWithLifecycle()
+    val creatures by viewModel.creatures.collectAsStateWithLifecycle()
 
     LaunchedEffect(categoryId) {
-        Log.d("CreaturesScreen", "Загружаем данные для категории $categoryId")
-        try {
-            try {
-                categoryName = SupabaseModule.client
-                    .postgrest["Category"]
-                    .select { filter { eq("Category_id", categoryId) } }
-                    .decodeSingleOrNull<Category>()
-                    ?.name ?: "Категория $categoryId"
-                Log.d("CreaturesScreen", "Имя категории: $categoryName")
-            } catch (e: Exception) {
-                Log.e("CreaturesScreen", "Не удалось загрузить имя категории", e)
-            }
-            creatures = repo.getCreaturesByCategory(categoryId)
-            Log.d("CreaturesScreen", "Загружено существ: ${creatures.size}")
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("CreaturesScreen", "Ошибка загрузки существ", e)
-            error = e.message ?: "Неизвестная ошибка"
-        }
+        viewModel.loadData(categoryId)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -75,6 +50,7 @@ fun CreaturesScreen(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+
         Row(modifier = Modifier.fillMaxSize()) {
 
             SideBar(
@@ -95,7 +71,6 @@ fun CreaturesScreen(
                         .padding(horizontal = 16.dp, vertical = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
                     Spacer(Modifier.height(16.dp))
 
                     Text(
@@ -109,17 +84,8 @@ fun CreaturesScreen(
 
                     Spacer(Modifier.height(24.dp))
 
-                    when {
-                        error != null -> Text(
-                            text = "Ошибка: $error",
-                            color = Color(0xFF8B0000),
-                            fontSize = 14.sp,
-                            fontFamily = FontFamily.Serif,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        creatures.isEmpty() -> Text(
+                    if (creatures.isEmpty()) {
+                        Text(
                             text = "Существа не найдены",
                             color = Color(0xFF2A1A0F),
                             fontSize = 16.sp,
@@ -127,8 +93,8 @@ fun CreaturesScreen(
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
-
-                        else -> LazyColumn(
+                    } else {
+                        LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(18.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.fillMaxWidth()
@@ -169,7 +135,7 @@ private fun CreatureItem(creature: Creature, onClick: () -> Unit) {
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(6.dp))
-        Divider(
+        HorizontalDivider(
             color = Color(0xFF2A1A0F),
             thickness = 1.dp,
             modifier = Modifier.fillMaxWidth(0.8f)

@@ -26,6 +26,9 @@ class AuthViewModel : ViewModel() {
     private val _history = MutableStateFlow<List<GameHistory>>(emptyList())
     val history = _history.asStateFlow()
 
+    private val _isLoadingHistory = MutableStateFlow(true)
+    val isLoadingHistory = _isLoadingHistory.asStateFlow()
+
     fun login(email: String, pass: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -61,10 +64,13 @@ class AuthViewModel : ViewModel() {
         _email.value = repo.currentUserEmail()
 
         viewModelScope.launch {
+            _isLoadingHistory.value = true
             try {
                 _history.value = repo.getGameHistory()
             } catch (e: Exception) {
-                // Обработка ошибки
+
+            } finally {
+                _isLoadingHistory.value = false
             }
         }
     }

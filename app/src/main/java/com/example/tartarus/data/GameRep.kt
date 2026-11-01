@@ -20,18 +20,15 @@ class GameRep {
             .decodeList<Difficulty>()
     }
 
-    // Подбор вопросов
     suspend fun generateQuizQuestions(difficulty: Difficulty): List<Question> {
         val targetCount = difficulty.questionsCount
 
-        // 1. Берем вопросы из выбранной сложности
         val primaryQuestions = questionsTable.select {
             filter { eq("Difficulty_id", difficulty.id) }
         }.decodeList<Question>()
 
         val selected = primaryQuestions.shuffled().take(targetCount).toMutableList()
 
-        // 2. Если не хватает — берем из других
         if (selected.size < targetCount) {
             val needed = targetCount - selected.size
             val fallbackQuestions = questionsTable.select {
@@ -42,10 +39,9 @@ class GameRep {
             selected.addAll(additional)
         }
 
-        return selected.shuffled() // Перемешиваем итоговый список
+        return selected.shuffled()
     }
 
-    // Сохранение ответа
     suspend fun saveAnswer(
         question: Question,
         userAnswer: String,
@@ -53,7 +49,6 @@ class GameRep {
     ): Boolean {
         val userId = SupabaseModule.client.auth.currentUserOrNull()?.id ?: return false
 
-        // Сравниваем ответы без учета регистра и пробелов
         val isCorrect = userAnswer.trim().equals(question.correctAnswer.trim(), ignoreCase = true)
         val score = if (isCorrect) question.scoreEarned else 0
 

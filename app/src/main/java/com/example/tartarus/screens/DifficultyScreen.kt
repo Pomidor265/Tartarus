@@ -1,12 +1,11 @@
 package com.example.tartarus.screens
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,31 +17,24 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tartarus.R
 import com.example.tartarus.SideBar
+import com.example.tartarus.ViewModel.DifficultyViewModel
 import com.example.tartarus.data.Difficulty
-import com.example.tartarus.data.GameRep
-import kotlinx.coroutines.CancellationException
 
 @Composable
 fun DifficultyScreen(
     onDifficultySelected: (Difficulty) -> Unit,
     onHomeClick: () -> Unit = {},
     onBookmarkClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    viewModel: DifficultyViewModel = viewModel()
 ) {
-    val repo = remember { GameRep() }
-    var difficulties by remember { mutableStateOf<List<Difficulty>>(emptyList()) }
+    val difficulties by viewModel.difficulties.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        try {
-            difficulties = repo.getDifficulties()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("DifficultyScreen", "Ошибка загрузки сложностей", e)
-        }
-    }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -88,7 +80,11 @@ fun DifficultyScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(6.dp))
-                        Divider(color = Color(0xFF2A1A0F), thickness = 1.dp, modifier = Modifier.fillMaxWidth(0.7f))
+                        HorizontalDivider(
+                            color = Color(0xFF2A1A0F),
+                            thickness = 1.dp,
+                            modifier = Modifier.fillMaxWidth(0.7f)
+                        )
                     }
                 }
             }
@@ -98,7 +94,7 @@ fun DifficultyScreen(
             SideBar(
                 onHomeClick = onHomeClick,
                 onBookmarkClick = onBookmarkClick,
-                onGameClick = { /* Уже тут */ },
+                onGameClick = {},
                 onProfileClick = onProfileClick
             )
         }

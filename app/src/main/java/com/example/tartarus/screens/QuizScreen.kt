@@ -1,6 +1,6 @@
 package com.example.tartarus.screens
 
-import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -17,14 +18,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tartarus.R
 import com.example.tartarus.SideBar
+import com.example.tartarus.ViewModel.QuizViewModel
 import com.example.tartarus.data.Difficulty
-import com.example.tartarus.data.GameRep
-import com.example.tartarus.data.Question
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
-import kotlin.random.Random
 
 @Composable
 fun QuizScreen(
@@ -32,33 +31,18 @@ fun QuizScreen(
     onQuizFinished: () -> Unit,
     onHomeClick: () -> Unit = {},
     onBookmarkClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    viewModel: QuizViewModel = viewModel()
 ) {
-    val repo = remember { GameRep() }
-    val scope = rememberCoroutineScope()
+    val questions by viewModel.questions.collectAsStateWithLifecycle()
+    val currentIndex by viewModel.currentIndex.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
 
-    var questions by remember { mutableStateOf<List<Question>>(emptyList()) }
-    var currentIndex by remember { mutableIntStateOf(0) }
     var userAnswer by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(true) }
-    var isSaving by remember { mutableStateOf(false) }
-
-    // Добавим состояние для показа ошибки на экране
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    val sessionId = remember { Random.nextLong(100000, 999999) }
 
     LaunchedEffect(difficulty) {
-        try {
-            questions = repo.generateQuizQuestions(difficulty)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e("QuizScreen", "Ошибка загрузки вопросов", e)
-            errorMessage = "Ошибка загрузки: ${e.message}"
-        } finally {
-            isLoading = false
-        }
+        viewModel.loadQuestions(difficulty)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -96,7 +80,6 @@ fun QuizScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Блок с текстом вопроса
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -116,7 +99,6 @@ fun QuizScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Показываем ошибку, если она есть
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage!!,
@@ -127,7 +109,6 @@ fun QuizScreen(
                     )
                 }
 
-                // Поле ввода
                 OutlinedTextField(
                     value = userAnswer,
                     onValueChange = { userAnswer = it },
@@ -139,44 +120,19 @@ fun QuizScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Кнопка
                 Button(
                     onClick = {
                         if (userAnswer.isBlank()) return@Button
-
-                        scope.launch {
-                            isSaving = true
-                            errorMessage = null
-                            try {
-                                Log.d("QuizScreen", "Попытка сохранить ответ: $userAnswer")
-                                val success = repo.saveAnswer(currentQuestion, userAnswer, sessionId)
-                                Log.d("QuizScreen", "Ответ сохранен. Правильно: $success")
-
-                                if (currentIndex < questions.size - 1) {
-                                    currentIndex++
-                                    userAnswer = ""
-                                } else {
-                                    onQuizFinished()
-                                }
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                Log.e("QuizScreen", "Ошибка сохранения ответа", e)
-                                // ВЫВОДИМ ОШИБКУ НА ЭКРАН
-                                errorMessage = "Ошибка базы: ${e.message}"
-                            } finally {
-                                isSaving = false
-                            }
-                        }
+                        viewModel.submitAnswer(userAnswer, onQuizFinished)
+                        userAnswer = ""
                     },
-                    enabled = !isSaving && userAnswer.isNotBlank(),
-                    modifier = Modifier.width(200.dp).height(50.dp)
+                    enabled = userAnswer.isNotBlank(),
+                    modifier = Modifier.width(200.dp).height(50.dp),
+                    shape = RectangleShape,
+                    border = BorderStroke(width = 1.dp, color = Color.Black),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                 ) {
-                    if (isSaving) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
-                    } else {
-                        Text("Подтвердить", fontSize = 18.sp, fontFamily = FontFamily.Serif)
-                    }
+                    Text("Подтвердить", fontSize = 18.sp, fontFamily = FontFamily.Serif)
                 }
             }
         }
@@ -185,9 +141,18 @@ fun QuizScreen(
             SideBar(
                 onHomeClick = onHomeClick,
                 onBookmarkClick = onBookmarkClick,
-                onGameClick = { },
+                onGameClick = {},
                 onProfileClick = onProfileClick
             )
         }
+
+        Image(
+            painter = painterResource(R.drawable.sealing),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .size(170.dp)
+        )
     }
 }

@@ -27,7 +27,6 @@ class BookmarksViewModel : ViewModel() {
             try {
                 _bookmarks.value = repo.getMyMarks()
             } catch (e: Exception) {
-                // log
             } finally {
                 _isLoading.value = false
             }
@@ -38,9 +37,8 @@ class BookmarksViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 repo.createMark(name)
-                loadBookmarks() // Обновляем список
+                loadBookmarks()
             } catch (e: Exception) {
-                // log
             }
         }
     }
@@ -51,7 +49,6 @@ class BookmarksViewModel : ViewModel() {
                 repo.deleteBookmark(id)
                 loadBookmarks()
             } catch (e: Exception) {
-                // log
             }
         }
     }

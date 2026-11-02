@@ -63,7 +63,7 @@ fun ProfileScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp),
+                    .padding(start = 80.dp, end = 24.dp, top = 32.dp, bottom = 200.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(Modifier.height(32.dp))
@@ -152,6 +152,7 @@ fun ProfileScreen(
                     onClick = { viewModel.logout(onGoToLogin) },
                     modifier = Modifier
                         .width(200.dp)
+                        .align(Alignment.Start)
                         .height(48.dp),
                     shape = RectangleShape,
                     border = BorderStroke(width = 1.dp, color = Color.Black),
@@ -169,7 +170,6 @@ fun ProfileScreen(
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(16.dp)
                 .size(250.dp)
         )
     }

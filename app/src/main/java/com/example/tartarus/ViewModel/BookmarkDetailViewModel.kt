@@ -21,4 +21,13 @@ class BookmarkDetailViewModel : ViewModel() {
             } catch (e: Exception) { }
         }
     }
+
+    fun removeCreature(markId: Long, creatureId: Long) {
+        viewModelScope.launch {
+            try {
+                repo.removeCreatureFromMark(markId, creatureId)
+                loadCreatures(markId) // Обновляем список после удаления
+            } catch (e: Exception) { }
+        }
+    }
 }

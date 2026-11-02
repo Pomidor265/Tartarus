@@ -5,8 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +38,8 @@ fun BookmarkDetailScreen(
     viewModel: BookmarkDetailViewModel = viewModel()
 ) {
     val creatures by viewModel.creatures.collectAsStateWithLifecycle()
+
+    var creatureToDelete by remember { mutableStateOf<Creature?>(null) }
 
     LaunchedEffect(bookmarkId) {
         viewModel.loadCreatures(bookmarkId)
@@ -82,17 +85,34 @@ fun BookmarkDetailScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(creatures) { creature ->
-                        Text(
-                            text = creature.name,
-                            fontSize = 22.sp,
-                            fontFamily = FontFamily.Serif,
-                            color = Color(0xFF2A1A0F),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onCreatureClick(creature) }
-                                .padding(vertical = 8.dp)
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = creature.name,
+                                fontSize = 22.sp,
+                                fontFamily = FontFamily.Serif,
+                                color = Color(0xFF2A1A0F),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onCreatureClick(creature) }
+                                    .padding(vertical = 8.dp)
+                            )
+
+                            IconButton(
+                                onClick = { creatureToDelete = creature },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Удалить из закладки",
+                                    tint = Color(0xFF8B0000)
+                                )
+                            }
+                        }
                         HorizontalDivider(
                             color = Color(0xFF2A1A0F),
                             thickness = 1.dp,
@@ -123,6 +143,29 @@ fun BookmarkDetailScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .size(250.dp)
+        )
+    }
+
+    if (creatureToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { creatureToDelete = null },
+            title = { Text("Удалить из закладки?") },
+            text = { Text("Вы уверены, что хотите удалить '${creatureToDelete?.name}' из этой папки?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        creatureToDelete?.id?.let { viewModel.removeCreature(bookmarkId, it) }
+                        creatureToDelete = null
+                    }
+                ) {
+                    Text("Удалить", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { creatureToDelete = null }) {
+                    Text("Отмена")
+                }
+            }
         )
     }
 }

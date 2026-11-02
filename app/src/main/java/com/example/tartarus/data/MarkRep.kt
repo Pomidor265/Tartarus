@@ -51,4 +51,14 @@ class MarkRep {
             }
     }
 
+    suspend fun removeCreatureFromMark(markId: Long, creatureId: Long) {
+        SupabaseModule.client.postgrest["Bookmark_Creatures"]
+            .delete {
+                filter {
+                    eq("Mark_id", markId)
+                    eq("Creature_id", creatureId)
+                }
+            }
+    }
+
 }

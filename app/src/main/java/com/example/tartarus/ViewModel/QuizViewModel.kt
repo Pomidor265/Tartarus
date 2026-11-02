@@ -1,6 +1,5 @@
 package com.example.tartarus.ViewModel
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tartarus.data.Difficulty
@@ -26,18 +25,22 @@ class QuizViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
+    private val _currentScore = MutableStateFlow(0)
+    val currentScore = _currentScore.asStateFlow()
+
+    private val _isGameFinished = MutableStateFlow(false)
+    val isGameFinished = _isGameFinished.asStateFlow()
+
     private var sessionId: Long = Random.nextLong(100000, 999999)
 
     fun loadQuestions(difficulty: Difficulty) {
         if (_questions.value.isNotEmpty()) return
-
         viewModelScope.launch {
             _isLoading.value = true
-            _errorMessage.value = null
             try {
                 _questions.value = repo.generateQuizQuestions(difficulty)
             } catch (e: Exception) {
-                _errorMessage.value = "Ошибка загрузки: ${e.message}"
+                _errorMessage.value = "Ошибка: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -49,11 +52,16 @@ class QuizViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                repo.saveAnswer(currentQ, answer, sessionId)
+                val isCorrect = repo.saveAnswer(currentQ, answer, sessionId)
+
+                if (isCorrect) {
+                    _currentScore.value += currentQ.scoreEarned
+                }
+
                 if (_currentIndex.value < _questions.value.size - 1) {
                     _currentIndex.value += 1
                 } else {
-                    onFinished()
+                    _isGameFinished.value = true
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "Ошибка базы: ${e.message}"

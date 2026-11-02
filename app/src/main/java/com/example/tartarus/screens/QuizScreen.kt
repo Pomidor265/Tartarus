@@ -2,6 +2,7 @@ package com.example.tartarus.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -39,6 +40,9 @@ fun QuizScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
 
+    val isGameFinished by viewModel.isGameFinished.collectAsStateWithLifecycle()
+    val currentScore by viewModel.currentScore.collectAsStateWithLifecycle()
+
     var userAnswer by remember { mutableStateOf("") }
 
     LaunchedEffect(difficulty) {
@@ -53,7 +57,40 @@ fun QuizScreen(
             contentScale = ContentScale.Crop
         )
 
-        if (isLoading) {
+        if (isGameFinished) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xCC2A1A0F))
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Игра окончена!",
+                    fontSize = 32.sp,
+                    fontFamily = FontFamily.Serif,
+                    color = Color.White
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Ваш результат: $currentScore очков",
+                    fontSize = 24.sp,
+                    fontFamily = FontFamily.Serif,
+                    color = Color(0xFFFFD700)
+                )
+                Spacer(Modifier.height(32.dp))
+                Button(
+                    onClick = onQuizFinished,
+                    modifier = Modifier.width(200.dp).height(50.dp),
+                    shape = RectangleShape,
+                    border = BorderStroke(width = 1.dp, color = Color.Black),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                ) {
+                    Text("Вернуться", fontSize = 18.sp, fontFamily = FontFamily.Serif)
+                }
+            }
+        } else if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color(0xFF8B0000))
         } else if (questions.isEmpty()) {
             Text(
@@ -137,22 +174,24 @@ fun QuizScreen(
             }
         }
 
-        Box(modifier = Modifier.align(Alignment.TopStart)) {
-            SideBar(
-                onHomeClick = onHomeClick,
-                onBookmarkClick = onBookmarkClick,
-                onGameClick = {},
-                onProfileClick = onProfileClick
+        if (!isGameFinished) {
+            Box(modifier = Modifier.align(Alignment.TopStart)) {
+                SideBar(
+                    onHomeClick = onHomeClick,
+                    onBookmarkClick = onBookmarkClick,
+                    onGameClick = {},
+                    onProfileClick = onProfileClick
+                )
+            }
+
+            Image(
+                painter = painterResource(R.drawable.sealing),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .size(170.dp)
             )
         }
-
-        Image(
-            painter = painterResource(R.drawable.sealing),
-            contentDescription = null,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .size(170.dp)
-        )
     }
 }

@@ -72,16 +72,20 @@ fun AppNavGraph(
 
         composable(Routes.PROFILE) {
             ProfileScreen(
-                onHomeClick = { navController.navigate(Routes.CATEGORIES)},
-                onGoToLogin = {
+                onLogoutSuccess = {
+                    navController.navigate(Routes.CATEGORIES) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onRequireLogin = {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onBookmarkClick = {navController.navigate((Routes.BOOKMARKS))},
-                onGameClick = {navController.navigate(Routes.DIFFICULTY)},
+                onHomeClick = { navController.navigate(Routes.CATEGORIES) },
+                onBookmarkClick = { navController.navigate(Routes.BOOKMARKS) },
+                onGameClick = { navController.navigate(Routes.DIFFICULTY) },
                 viewModel = viewModel()
-
             )
         }
 

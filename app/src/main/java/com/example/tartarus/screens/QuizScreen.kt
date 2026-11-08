@@ -5,6 +5,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,6 +44,7 @@ fun QuizScreen(
 
     val isGameFinished by viewModel.isGameFinished.collectAsStateWithLifecycle()
     val currentScore by viewModel.currentScore.collectAsStateWithLifecycle()
+    val answersHistory by viewModel.answersHistory.collectAsStateWithLifecycle()
 
     var userAnswer by remember { mutableStateOf("") }
 
@@ -61,25 +64,67 @@ fun QuizScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xCC2A1A0F))
-                    .padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Spacer(Modifier.height(24.dp))
+
                 Text(
                     text = "Игра окончена!",
                     fontSize = 32.sp,
                     fontFamily = FontFamily.Serif,
-                    color = Color.White
+                    color = Color(0xFF2A1A0F)
                 )
-                Spacer(Modifier.height(16.dp))
+
                 Text(
                     text = "Ваш результат: $currentScore очков",
                     fontSize = 24.sp,
                     fontFamily = FontFamily.Serif,
-                    color = Color(0xFFFFD700)
+                    color = Color(0xFF000000),
+                    modifier = Modifier.padding(vertical = 16.dp)
                 )
-                Spacer(Modifier.height(32.dp))
+
+                HorizontalDivider(color = Color.Black, thickness = 1.dp)
+                Spacer(Modifier.height(16.dp))
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(answersHistory) { result ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0x22FFFFFF)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = result.questionText,
+                                    fontFamily = FontFamily.Serif,
+                                    fontSize = 16.sp,
+                                    color = Color.Black
+                                )
+                                Spacer(Modifier.height(8.dp))
+
+                                Text(
+                                    text = "Ваш ответ: ${result.userAnswer}",
+                                    fontFamily = FontFamily.Serif,
+                                    color = if (result.isCorrect) Color(0xFF1BC015) else Color(0xFFC62828)
+                                )
+
+                                if (!result.isCorrect) {
+                                    Text(
+                                        text = "Правильный ответ: ${result.correctAnswer}",
+                                        fontFamily = FontFamily.Serif,
+                                        color = Color(0xFF1BC015)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
                 Button(
                     onClick = onQuizFinished,
                     modifier = Modifier.width(200.dp).height(50.dp),
@@ -87,7 +132,7 @@ fun QuizScreen(
                     border = BorderStroke(width = 1.dp, color = Color.Black),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                 ) {
-                    Text("Вернуться", fontSize = 18.sp, fontFamily = FontFamily.Serif)
+                    Text("Назад", fontSize = 18.sp, fontFamily = FontFamily.Serif)
                 }
             }
         } else if (isLoading) {

@@ -25,7 +25,8 @@ import com.example.tartarus.ViewModel.AuthViewModel
 
 @Composable
 fun ProfileScreen(
-    onGoToLogin: () -> Unit = {},
+    onLogoutSuccess: () -> Unit = {},
+    onRequireLogin: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onBookmarkClick: () -> Unit = {},
     onGameClick: () -> Unit = {},
@@ -38,7 +39,7 @@ fun ProfileScreen(
 
     LaunchedEffect(Unit) {
         if (!viewModel.isLoggedIn()) {
-            onGoToLogin()
+            onRequireLogin()
         } else {
             viewModel.loadProfileData()
         }
@@ -52,6 +53,14 @@ fun ProfileScreen(
             contentScale = ContentScale.Crop
         )
 
+        Image(
+            painter = painterResource(R.drawable.sealing),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(250.dp)
+        )
+
         Row(modifier = Modifier.fillMaxSize()) {
             SideBar(
                 onHomeClick = onHomeClick,
@@ -63,10 +72,10 @@ fun ProfileScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(start = 80.dp, end = 24.dp, top = 32.dp, bottom = 200.dp),
+                    .padding(horizontal = 16.dp, vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(16.dp))
 
                 Text(
                     text = "Личный кабинет",
@@ -101,76 +110,84 @@ fun ProfileScreen(
                     fontSize = 22.sp,
                     fontFamily = FontFamily.Serif,
                     color = Color(0xFF2A1A0F),
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start
                 )
 
                 Spacer(Modifier.height(8.dp))
 
                 if (isLoadingHistory) {
-                    CircularProgressIndicator(color = Color(0xFF8B0000), modifier = Modifier.size(32.dp))
+                    CircularProgressIndicator(
+                        color = Color(0xFF8B0000),
+                        modifier = Modifier.size(32.dp)
+                    )
                 } else if (history.isEmpty()) {
                     Text(
                         text = "Вы ещё не играли",
                         fontSize = 16.sp,
                         fontFamily = FontFamily.Serif,
                         color = Color.Gray,
-                        modifier = Modifier.align(Alignment.Start)
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start
                     )
                 } else {
                     LazyColumn(
-                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(bottom = 80.dp),
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(history) { game ->
-                            Row(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                    .padding(vertical = 8.dp)
                             ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = game.date,
+                                        fontSize = 16.sp,
+                                        fontFamily = FontFamily.Serif,
+                                        color = Color(0xFF2A1A0F)
+                                    )
+                                    Text(
+                                        text = "${game.score} очков",
+                                        fontSize = 16.sp,
+                                        fontFamily = FontFamily.Serif,
+                                        color = Color(0xFF0A0909)
+                                    )
+                                }
+
                                 Text(
-                                    text = game.date,
-                                    fontSize = 16.sp,
+                                    text = "Правильных ответов: ${game.correctAnswers} из ${game.totalQuestions}",
+                                    fontSize = 14.sp,
                                     fontFamily = FontFamily.Serif,
-                                    color = Color(0xFF2A1A0F)
-                                )
-                                Text(
-                                    text = "${game.score} очков",
-                                    fontSize = 16.sp,
-                                    fontFamily = FontFamily.Serif,
-                                    color = Color(0xFF1565C0)
+                                    color = Color(0xFF5A4A3A),
+                                    modifier = Modifier.padding(top = 4.dp)
                                 )
                             }
+
                             HorizontalDivider(color = Color(0xFF2A1A0F).copy(alpha = 0.3f))
                         }
                     }
                 }
-
-                Spacer(Modifier.height(16.dp))
-
-                Button(
-                    onClick = { viewModel.logout(onGoToLogin) },
-                    modifier = Modifier
-                        .width(200.dp)
-                        .align(Alignment.Start)
-                        .height(48.dp),
-                    shape = RectangleShape,
-                    border = BorderStroke(width = 1.dp, color = Color.Black),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-                ) {
-                    Text("Выйти", fontFamily = FontFamily.Serif)
-                }
-
-                Spacer(Modifier.height(32.dp))
             }
         }
 
-        Image(
-            painter = painterResource(R.drawable.sealing),
-            contentDescription = null,
+        Button(
+            onClick = { viewModel.logout(onLogoutSuccess) },
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .size(250.dp)
-        )
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 260.dp)
+                .width(200.dp)
+                .height(48.dp),
+            shape = RectangleShape,
+            border = BorderStroke(width = 1.dp, color = Color.Black),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+        ) {
+            Text("Выйти", fontFamily = FontFamily.Serif)
+        }
     }
 }

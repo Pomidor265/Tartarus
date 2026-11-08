@@ -70,7 +70,9 @@ class AuthRepository {
             GameHistory(
                 sessionId = sessionId,
                 score = sessionRecords.sumOf { it.score },
-                date = "Игра #$sessionId"
+                date = "Игра #$sessionId",
+                correctAnswers = sessionRecords.count { it.isCorrect },
+                totalQuestions = sessionRecords.size
             )
         }
     }

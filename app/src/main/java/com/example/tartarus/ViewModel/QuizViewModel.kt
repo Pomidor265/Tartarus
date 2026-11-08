@@ -5,10 +5,19 @@ import androidx.lifecycle.viewModelScope
 import com.example.tartarus.data.Difficulty
 import com.example.tartarus.data.GameRep
 import com.example.tartarus.data.Question
+import com.example.tartarus.data.SupabaseModule
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+
+data class AnswerResult(
+    val questionText: String,
+    val userAnswer: String,
+    val correctAnswer: String,
+    val isCorrect: Boolean
+)
 
 class QuizViewModel : ViewModel() {
     private val repo = GameRep()
@@ -31,6 +40,9 @@ class QuizViewModel : ViewModel() {
     private val _isGameFinished = MutableStateFlow(false)
     val isGameFinished = _isGameFinished.asStateFlow()
 
+    private val _answersHistory = MutableStateFlow<List<AnswerResult>>(emptyList())
+    val answersHistory = _answersHistory.asStateFlow()
+
     private var sessionId: Long = Random.nextLong(100000, 999999)
 
     fun loadQuestions(difficulty: Difficulty) {
@@ -40,7 +52,7 @@ class QuizViewModel : ViewModel() {
             try {
                 _questions.value = repo.generateQuizQuestions(difficulty)
             } catch (e: Exception) {
-                _errorMessage.value = "Ошибка: ${e.message}"
+                _errorMessage.value = "Ошибка загрузки вопросов: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -52,11 +64,24 @@ class QuizViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val isCorrect = repo.saveAnswer(currentQ, answer, sessionId)
+                val isCorrect = answer.trim().equals(currentQ.correctAnswer.trim(), ignoreCase = true)
 
                 if (isCorrect) {
                     _currentScore.value += currentQ.scoreEarned
                 }
+
+                val user = SupabaseModule.client.auth.currentUserOrNull()
+                if (user != null) {
+                    repo.saveAnswer(currentQ, answer, sessionId)
+                }
+
+                val result = AnswerResult(
+                    questionText = currentQ.text,
+                    userAnswer = answer,
+                    correctAnswer = currentQ.correctAnswer,
+                    isCorrect = isCorrect
+                )
+                _answersHistory.value = _answersHistory.value + result
 
                 if (_currentIndex.value < _questions.value.size - 1) {
                     _currentIndex.value += 1
@@ -64,7 +89,7 @@ class QuizViewModel : ViewModel() {
                     _isGameFinished.value = true
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "Ошибка базы: ${e.message}"
+                _errorMessage.value = "Ошибка: ${e.message}"
             }
         }
     }
